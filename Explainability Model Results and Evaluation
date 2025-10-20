@@ -3,9 +3,9 @@
 student_data = X_test.sample(n=1)
 
 def predict_fn(x):
-    return knn_model.predict_proba(x)[:, 1]
+    return knn_model.predict_proba(x)[:, 1]  
 
-background = shap.kmeans(X_train_resampled, 10)
+background = shap.kmeans(X_train, 10)
 explainer = shap.KernelExplainer(predict_fn, background)
 
 shap_values = explainer.shap_values(student_data)
@@ -35,8 +35,8 @@ print(f"- Predicted class = {'Not Dropped Out' if pred_class == 0 else 'Dropped 
 student_data = X_test.sample(n=1)
 
 explainer = lime.lime_tabular.LimeTabularExplainer(
-    training_data=np.array(X_train_resampled),
-    feature_names=X_train_resampled.columns.tolist(),
+    training_data=np.array(X_train),
+    feature_names=X_train.columns.tolist(),
     class_names=['Not Dropped Out', 'Dropped Out'],
     mode='classification'
 )
@@ -44,7 +44,7 @@ explainer = lime.lime_tabular.LimeTabularExplainer(
 exp = explainer.explain_instance(
     data_row=student_data.iloc[0],
     predict_fn=knn_model.predict_proba,
-    num_features=len(X_train_resampled.columns)
+    num_features=len(X_train.columns)
 )
 
 exp.show_in_notebook(show_table=True, show_all=False)
@@ -72,8 +72,8 @@ print(top10_shap)
 
 #LIME top 10 features (Repeat for the another class)
 explainer = lime.lime_tabular.LimeTabularExplainer(
-    training_data=np.array(X_train_resampled),
-    feature_names=X_train_resampled.columns.tolist(),
+    training_data=np.array(X_train),
+    feature_names=X_train.columns.tolist(),
     class_names=["No Dropout", "Dropout"],
     mode="classification"
 )
@@ -85,7 +85,7 @@ for i in range(len(X_test)):
     exp = explainer.explain_instance(
         data_row=student_data.values,
         predict_fn=knn_model.predict_proba,
-        num_features=len(X_train_resampled.columns)
+        num_features=len(X_train.columns)
     )
     for feature, value in exp.as_list(label=1):  # label=1 → Dropout
         lime_contribs[feature].append(abs(value))
@@ -113,6 +113,7 @@ plt.show()
 
 #LEAF evaluation
 #Fidelity
+# مدى مطابقة التفسير مع تنبؤ النموذج الفعلي
 def fidelity(model, X, explanations, predict_fn):
     y_pred = np.argmax(predict_fn(X), axis=1)
     
@@ -158,7 +159,7 @@ print(f"Stability: {stability_shap:.3f}")
 
 #Apply LEAF metrics to LIME
 lime_explainer = lime.lime_tabular.LimeTabularExplainer(
-    training_data=np.array(X_train_resampled),
+    training_data=np.array(X_train),
     feature_names=X_train.columns.tolist(),
     class_names=["No Dropout","Dropout"],
     mode="classification"
@@ -169,7 +170,7 @@ for i in range(len(X_test)):
     exp = lime_explainer.explain_instance(
         data_row=X_test.iloc[i].values,
         predict_fn=knn_model.predict_proba,
-        num_features=len(X_train_resampled.columns)
+        num_features=len(X_train.columns)
     )
     arr = np.zeros(X_test.shape[1])
     for feature, val in exp.as_list(label=1):
@@ -190,7 +191,7 @@ print(f"Prescriptivity: {prescriptivity_lime:.3f}")
 print(f"Stability: {stability_lime:.3f}")
 
 #Computation time for SHAP
-explainer = shap.KernelExplainer(knn_model.predict_proba, shap.kmeans(X_train_resampled, 10))
+explainer = shap.KernelExplainer(knn_model.predict_proba, shap.kmeans(X_train, 10))
 times = []
 
 for i in range(len(X_test)):
@@ -207,7 +208,7 @@ print(f"Average SHAP computation time per record: {avg_time_per_record:.4f} seco
 #Computation time for LIME
 
 lime_explainer = lime.lime_tabular.LimeTabularExplainer(
-    training_data=np.array(X_train_resampled),
+    training_data=np.array(X_train),
     feature_names=X_train.columns.tolist(),
     class_names=["No Dropout", "Dropout"],
     mode="classification"
